@@ -7,7 +7,7 @@ The PEP/8 Virtual Computer executes assembly source code and hexidecimal object 
 
 Introduction
 -----------------------
-This program attempts to simulate the PEP/8 Virtual Computer using C++. It focuses strictly on machine code execution and does not provide a user interface. Users can input a text file and the program will display the values of each register, instruction specifier, and operand specifier after each instruction is completed. It will also display the program output if applicable. Trace mode is not available. Specific features and requirements are outlined below.
+This program attempts to simulate the PEP/8 Virtual Computer using C++. It focuses strictly on machine code execution and does not provide a user interface. Users can input a text file and the program will display values of the registers, instruction specifier, and operand specifier after each instruction is completed. It will also display the program output if applicable. Trace mode is not available. Specific features and requirements are outlined below.
 
 Requirements
 ----------------------
