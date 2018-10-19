@@ -13,5 +13,5 @@ Requirements
 ----------------------
 Text file: Object code must be written in hexadecimal as two adjacent digits (1-byte) followed by a space. Multiple lines are accepted but no trailing spaces.
 
-Content: Only 18 specific instruction specifiers and 2 addressing modes are allowed. There should be 3-bytes to an instruction (1-byte instruction specifier, 2-byte operand) except for Unary instructions which have 1-byte. See attached document for the instruction set.
+Content: Only 18 specific instruction specifiers and 2 addressing modes are allowed. There should be 3-bytes to an instruction (1-byte instruction specifier, 2-byte operand) except for Unary instructions which have only 1-byte. See attached document for the instruction set.
 
