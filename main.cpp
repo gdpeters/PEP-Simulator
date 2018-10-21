@@ -10,7 +10,7 @@ int main() {
 
 /** Initiate registers, instruction specifier, operand specifier, and operand */
 
-/** Initiate an output file to write to if we choose this alternative route as opposed to screen display */
+/** Initiate an output file if we choose this route as opposed to screen display */
 
 /** Iterate through memory */
 
@@ -18,7 +18,7 @@ int main() {
     
     /** Load operand specifier, extract register and addressing mode, update operand, and increment PC */
     
-    /** Execute instruction by calling function (from other .cpp file or explicitly written) */
+    /** Execute instruction by calling function (create subprograms when useful) */
     
     /** Display register values to the screen or output file. Call function to do this. */
     
