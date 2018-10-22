@@ -1,6 +1,6 @@
-Description of sample input text file. Two characters
-are added using the Accumulator and their sum is
-outputted to the screen.
+Description of input.txt file. Two characters
+are summed using the Accumulator and their sum is
+displayed to the screen.
 
 If we allow character inputs during execution,
 we will need to include cin>> in our function.
