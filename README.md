@@ -1,4 +1,4 @@
-# PEP-Simulator
+# PEP8-Simulator
 This program simulates the PEP/8 Virtual Computer.
 
 # PEP/8 Virtual Computer Background
