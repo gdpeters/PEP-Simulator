@@ -12,7 +12,7 @@ int main() {
 
 /** Initiate an output file if we choose this route as opposed to screen display */
 
-/** Iterate through memory */
+/** Iterate through memory array */
 
     /** Load and determine instruction specifier and increment PC */
     
@@ -20,7 +20,7 @@ int main() {
     
     /** Execute instruction by calling function (create subprograms when useful) */
     
-    /** Display register values to the screen or output file. Call function to do this. */
+    /** Display register values to the screen or output file (call function to do this) */
     
     
  /** What else are we missing here? */   
