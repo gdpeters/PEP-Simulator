@@ -2,6 +2,31 @@
 //add #include headers as needed
 
 //add unions, structs, and global variables
+union instructionSpec {
+
+	struct {
+		unsigned int reg1 : 1;
+		unsigned int instr7 : 7;
+	} unary;
+
+	struct {
+		unsigned int addr3 : 3;
+		unsigned int instr5 : 5;
+	} ioTraps;
+
+	struct {
+		unsigned int addr3 : 3;
+		unsigned int reg1 : 1;
+		unsigned int instr4 : 4;
+	} logArith;
+	
+	struct {
+		unsigned int digit4R : 4;
+		unsigned int digit4L : 4;
+	} loadIS;
+
+	unsigned int fullIS : 8;
+};
 
 
 int main() {
