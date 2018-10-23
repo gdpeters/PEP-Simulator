@@ -72,7 +72,9 @@ int main() {
 
 /** Initiate an output file if we choose this route as opposed to screen display */
 
-/** Iterate through memory array */
+/** Iterate through memory array
+Load and determine instruction specifier and increment PC 
+Load operand specifier, extract register and addressing mode, update operand, and increment PC */
 	
 	instructionSpec inspTemp = mainMem[reg.pC];	//load first memory array cell into the instruction specifier
 	reg.pC++;					//increment program counter
@@ -84,11 +86,10 @@ int main() {
 			opspTemp.halves.bits8L = mainMem[reg.pC]; //load operand specifier first byte
 			reg.pC++;				  //increment program counter
 			opspTemp.halves.bits8R = mainMem[reg.pC]; //load operand specifier second byte
-			reg.pC++;				  //increment program counter
-			
-			
+			reg.pC++;				  //increment program counter	
 		}
-		
+		/**still need to update operand (maybe w/in each case?)*/
+		 /** Execute instruction by calling function (create subprograms when useful) */
 		switch (inspTemp.halves.bits4L)
 		{
 			case 1 : //unary no operand
@@ -97,7 +98,7 @@ int main() {
 				break;
 			case 3 :
 				break;
-			case 4 : cin >> mainMem[
+			case 4 : 
 			case 5 :
 			//no case 6
 			case 7 :
@@ -110,17 +111,11 @@ int main() {
 			case 14 :
 			case 15 :
 		}
-	}
-	
 		
+		/** Display register values to the screen or output file (call function to do this) */
+	}
 
-    /** Load and determine instruction specifier and increment PC */
-    
-    /** Load operand specifier, extract register and addressing mode, update operand, and increment PC */
-    
-    /** Execute instruction by calling function (create subprograms when useful) */
-    
-    /** Display register values to the screen or output file (call function to do this) */
+
     
     
  /** What else are we missing here? */   
