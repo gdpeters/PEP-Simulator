@@ -57,7 +57,7 @@ union operandSpec {	//Operand Specifier
 	unsigned int fullOS : 16;	//**DELETE IF UNUSED?
 };
 
-int updateOperand(int m [], operandSpec os, int aaa)	//Updates operand with appropriate value 
+unsigned int updateOperand(int m [], operandSpec os, int aaa)	//Updates operand with appropriate value 
 {
 	return (aaa == 0) ? os.fullOS : m[os.fullOS];	
 }
@@ -102,35 +102,23 @@ int main() {
 				if (instrTemp.unary.instr7 == 12)	//Bitwise invert
 				{
 					if (instrTemp.unary.reg1 == 0) 
-					{
 						reg.rA16 = reg.rA16 ^ ((1<<16) - 1); //is there a shorter way to write this?
-					}
 					else
-					{
 						reg.rX16 = reg.rX16 ^ ((1<<16) - 1); //is there a shorter way to write this?
-					}
 				}
 				else if (instrTemp.unary.instr7 == 14)
 				{
 					if (instrTemp.unary.reg1 == 0) 
-					{
-						reg.rA16<<=1;	//arithmetic shift left
-					}
+						reg.rA16<<=1;	//Arithmetic shift left Accumulator
 					else
-					{
-						reg.rX16<<=1; 
-					}
+						reg.rX16<<=1;	//Arithmetic shift left Index
 				}
 				else
 				{
 					if (instrTemp.unary.reg1 == 0) 
-					{
-						reg.rA16>>=1;	//arithmetic shift right
-					}
+						reg.rA16>>=1;	//Arithmetic shift right Accumulator
 					else
-					{
-						reg.rX16>>=1; 
-					}
+						reg.rX16>>=1; 	//Arithmetic shift right Index
 				}
 				break;
 			case 2 : //unary no operand
@@ -149,7 +137,7 @@ int main() {
 						reg.rX16 = (reg.rX16 >> 1) + (reg.rX16<<15);
 				}
 				break;
-			case 3 : 
+			case 3 :	
 				break;
 			case 4 : //FIGURE OUT IF ANY HEX/DEC CONVERSIONS NEED TO BE DONE
 			case 5 :
@@ -164,10 +152,10 @@ int main() {
 				 else
 					reg.rX16 -= reg.op16;
 				break;
-			case 9 : if (instrTemp.logArith.reg1 == 0)
-					reg.rA16 = reg.rA16 && reg.op16;
+			case 9 : if (instrTemp.logArith.reg1 == 0)	
+					reg.rA16 = reg.rA16 && reg.op16;	//Bitwise AND
 				else
-					reg.rX16 = reg.rX16 || reg.op16;
+					reg.rX16 = reg.rX16 || reg.op16;	
 				break;
 			case 10 :
 			//no case 11
@@ -184,25 +172,17 @@ int main() {
 			case 14 : if (instrTemp.logArith.reg1 == 0)	//Store r to memory
 					mainMem[reg.op16] = reg.rA16;
 				 else
-					mainMem[reg.oP16] = reg.rX16;
+					mainMem[reg.op16] = reg.rX16;
 				break;
-			case 15 : if (instrTemp.logArith.reg1 == 0)	//Store byte from r to memory
-					mainMem[reg.op8] = reg.rA8R;
+			case 15 : if (instrTemp.logArith.reg1 == 0)	//Store byte to memory
+					mainMem[reg.op8R] = reg.rA8R;
 				 else
-					mainMem[reg.op8] = reg.rX8R;
+					mainMem[reg.op8R] = reg.rX8R;
 				break;
 		}
-		instrTemp = mainMem[reg.pC];
+		instrTemp.fullIS = mainMem[reg.pC];
 		reg.pC++;
 		/** Display register values to the screen or output file (call function to do this) */
 	}
-
-
-    
-    
- /** What else are we missing here? */   
- 
- 
-    
   return 0;
 }
