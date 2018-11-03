@@ -57,7 +57,7 @@ union operandSpec {	//Operand Specifier
 	unsigned int fullOS : 16;	//**DELETE IF UNUSED?
 };
 
-unsigned int updateOperand(int m [], operandSpec os, int aaa)	//Updates operand with appropriate value 
+unsigned int updateOperand(unsigned int m [], operandSpec os, int aaa)	//Updates operand with appropriate value 
 {
 	return (aaa == 0) ? os.fullOS : m[os.fullOS];	
 }
@@ -122,14 +122,14 @@ int main() {
 				}
 				break;
 			case 2 : //unary no operand
-				if (instrTemp.unary.instr7 == 20) //rotate left
+				if (instrTemp.unary.instr7 == 20) //Rotate left
 				{
 					if (instrTemp.unary.reg1 == 0)
 						reg.rA16 = (reg.rA16 << 1) + (reg.rA16>>15);
 					else
 						reg.rX16 = (reg.rX16 << 1) + (reg.rX16>>15);
 				}
-				else	//rotate right
+				else	//Rotate right
 				{
 					if (instrTemp.unary.reg1 == 0)
 						reg.rA16 = (reg.rA16 >> 1) + (reg.rA16<<15);
@@ -137,10 +137,12 @@ int main() {
 						reg.rX16 = (reg.rX16 >> 1) + (reg.rX16<<15);
 				}
 				break;
-			case 3 :	
+			case 3 :	cout<<reg.op16; //for now
 				break;
 			case 4 : //FIGURE OUT IF ANY HEX/DEC CONVERSIONS NEED TO BE DONE
+				break;
 			case 5 :
+				break;
 			//no case 6
 			case 7 : if (instrTemp.logArith.reg1 == 0)	//Add to r
 					reg.rA16 += reg.op16;
@@ -158,7 +160,8 @@ int main() {
 					reg.rX16 = reg.rX16 || reg.op16;	
 				break;
 			case 10 :
-			//no case 11
+				break;
+			//no case 11	
 			case 12 : if (instrTemp.logArith.reg1 == 0)	//Load r from memory
 					reg.rA16 = reg.op16;
 				 else
