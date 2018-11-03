@@ -1,231 +1,188 @@
-
-//add #include headers as needed
 #include <iostream>
 #include <fstream>
 using namespace std;
 
-
-//add global variables if needed
-struct registers {
+struct registers {	
 	union {
 		struct {
-			unsigned int rA8R : 8;
+			unsigned int rA8R : 8;	//Accumulator divided
 			unsigned int rA8L : 8;
 		} ;
-		unsigned int rA16 : 16;
+		unsigned int rA16 : 16;	//Accumulator
 	};
 	union {
 		struct {
-			unsigned int rX8R : 8;
+			unsigned int rX8R : 8;	//Index divided
 			unsigned int rX8L : 8;
 		} ;
-		unsigned int rX16 : 16;
+		unsigned int rX16 : 16;	//Index
 	};
 
-	unsigned int pC : 16;
-	unsigned int sP : 16;
+	unsigned int pC : 16;	//Program counter
+	unsigned int sP : 16;	//Stack Pointer
 	
-	union {	//operand that will be displayed. Same as operand specifier if immediate addressing mode (000).
+	union {
 		struct {
-			unsigned int op8R : 8;
+			unsigned int op8R : 8;	//Operand divided
 			unsigned int op8L : 8;
 		} ;
-		unsigned int op16 : 16;
+		unsigned int op16 : 16;	//Operand
 	}; 
 };
 
-union instructionSpec {
-
+union instructionSpec {	//Instruction specifier
 	struct {
 		unsigned int reg1 : 1;
 		unsigned int instr7 : 7;
-	} unary;
-
+	} unary;	//For unary instructions (0000 000r)
 	struct {
 		unsigned int addr3 : 3;
 		unsigned int instr5 : 5;
-	} ioTraps;
-
+	} ioTraps;	//For I/O instructions (0000 0aaa)
 	struct {
 		unsigned int addr3 : 3;
 		unsigned int reg1 : 1;
-		unsigned int instr4 : 4;
-	} logArith;
+		unsigned int instr4 : 4;	//Also used in switch statement to identify instruction number
+	} logArith;	//For Arithmetic instructions (0000 raaa)
 	
-	struct {
-		unsigned int bits4R : 4;
-		unsigned int bits4L : 4;
-	} halves;
-
-	unsigned int fullIS : 8;
+	unsigned int fullIS : 8;	//If fullIS == 00 then stop reading instructions
 };
 
-union operandSpec {
-
+union operandSpec {	//Operand Specifier
 	struct {
-		unsigned int bits8R : 8;
+		unsigned int bits8R : 8;	
 		unsigned int bits8L : 8;
-	} halves;
+	} load;	//Used when loading bytes from memory
 
-	unsigned int fullOS : 16;
+	unsigned int fullOS : 16;	//**DELETE IF UNUSED?
 };
 
-int updateOperand(int m [], operandSpec os, int aaa)
+unsigned int updateOperand(int m [], operandSpec os, int aaa)	//Updates operand with appropriate value 
 {
-	return (aaa == 0) ? os : m[os];	
+	return (aaa == 0) ? os.fullOS : m[os.fullOS];	
 }
 
-
-
 int main() {
-
-/** Reads file and loads memory array */
-	ifstream readFile;					//Creates an input stream
-	readFile.open("input.txt", ios::in);			//opens file
-	unsigned int mainMem [50];				//Creates main memory array
-	unsigned int tempHex;					//Used in retrieving each hex value
-	int count = 0;
-	while (readFile >> hex >> tempHex) 			//Loads 1-byte from input file to variable
+	ifstream readFile;				//Create an input stream
+	readFile.open("input.txt", ios::in);		//Open file
+	unsigned int mainMem [50];			//Create main memory array
+	unsigned int tempHex;				//For retrieving each hex value from file
+	int count = 0;					//Array index value
+	
+	while (readFile >> hex >> tempHex) 		//Load 1-byte from input file to variable
 	{
-		mainMem[count] = tempHex;			//Assigns value to main memory
+		mainMem[count] = tempHex;		//Assign value to main memory
 		count++;
 	}
 	
-
-/** Initiate registers, instruction specifier, operand specifier, and operand */
-	registers reg;	//declare a set of new registers
-	registers *regPointer;
-	reg.pC = 0;	//initiate program counter to 0
-
-/** Initiate an output file if we choose this route as opposed to screen display */
-
-/** Iterate through memory array
-Load and determine instruction specifier and increment PC 
-Load operand specifier, extract register and addressing mode, update operand, and increment PC */
+	registers reg;			//Declare a set of new registers
+	reg.pC = 0;			//Initiate program counter to 0
 	
-	instructionSpec inspTemp = mainMem[reg.pC];	//load first memory array cell into the instruction specifier
-	reg.pC++;					//increment program counter
-	operandSpec opspTemp = 0;			//initiate a temporary operand specifier variable				
-	while (inspTemp.fullIS != 0)		//while instruction specifier is not STOP
+	instructionSpec instrTemp;	//Declare a temporary instruction specifier that will be overriden with each iteration
+	operandSpec operTemp;		//Declare a temporary operand specifier
+	
+	instrTemp.fullIS = mainMem[reg.pC];	//Load first memory array cell into the instruction specifier
+	operTemp.fullOS = 0;			//Initiate a temporary operand specifier variable			
+	reg.pC++;				//Increment program counter
+	
+	while (instrTemp.fullIS != 0)		//While instruction specifier is not STOP
 	{
-		if (inspTemp.halves.bits4L > 2) //if instruction is not unary
+		if (instrTemp.logArith.instr4 > 2) //If instruction is not unary
 		{
-			opspTemp.halves.bits8L = mainMem[reg.pC]; //load operand specifier first byte
-			reg.pC++;				  //increment program counter
-			opspTemp.halves.bits8R = mainMem[reg.pC]; //load operand specifier second byte
-			reg.pC++;				  //increment program counter	
-			reg.op16 = updateOperand(mainMem, opspTemp, inspTemp.ioTraps.addr3);
+			operTemp.load.bits8L = mainMem[reg.pC]; 	//Load operand specifier first byte
+			reg.pC++;				  	//Increment program counter
+			operTemp.load.bits8R = mainMem[reg.pC]; 	//Load operand specifier second byte
+			reg.pC++;				  	//Increment program counter	
+			reg.op16 = updateOperand(mainMem, operTemp, instrTemp.ioTraps.addr3);	//Assign appropriate value to operand
 		}
 		
-		 /** Execute instruction by calling function (create subprograms when useful) */
-		//**NEED TO CONDENSE, PUT INTO FUNCTIONS**//
-		switch (inspTemp.halves.bits4L)
+		switch (instrTemp.logArith.instr4)	//Check first nibble to extract instruction code
 		{
-			case 1 : //unary no operand
-				if (inspTemp.unary.instr7 == 12) //bitwise invert
+			case 1 :	//Unary no operand
+				if (instrTemp.unary.instr7 == 12)	//Bitwise invert
 				{
-					if (inspTemp.unary.reg1 == 0) 
-					{
+					if (instrTemp.unary.reg1 == 0) 
 						reg.rA16 = reg.rA16 ^ ((1<<16) - 1); //is there a shorter way to write this?
-					}
 					else
-					{
 						reg.rX16 = reg.rX16 ^ ((1<<16) - 1); //is there a shorter way to write this?
-					}
 				}
-				else if (inspTemp.unary.instr7 == 14)
+				else if (instrTemp.unary.instr7 == 14)
 				{
-					if (inspTemp.unary.reg1 == 0) 
-					{
-						reg.rA16<<=1;	//arithmetic shift left
-					}
+					if (instrTemp.unary.reg1 == 0) 
+						reg.rA16<<=1;	//Arithmetic shift left Accumulator
 					else
-					{
-						reg.rX16<<=1; 
-					}
+						reg.rX16<<=1;	//Arithmetic shift left Index
 				}
 				else
 				{
-					if (inspTemp.unary.reg1 == 0) 
-					{
-						reg.rA16>>=1;	//arithmetic shift right
-					}
+					if (instrTemp.unary.reg1 == 0) 
+						reg.rA16>>=1;	//Arithmetic shift right Accumulator
 					else
-					{
-						reg.rX16>>=1; 
-					}
+						reg.rX16>>=1; 	//Arithmetic shift right Index
 				}
 				break;
 			case 2 : //unary no operand
-				if (inspTemp.unary.instr7 == 20) //rotate left
+				if (instrTemp.unary.instr7 == 20) //rotate left
 				{
-					if (inspTemp.unary.reg1 == 0)
+					if (instrTemp.unary.reg1 == 0)
 						reg.rA16 = (reg.rA16 << 1) + (reg.rA16>>15);
 					else
 						reg.rX16 = (reg.rX16 << 1) + (reg.rX16>>15);
 				}
 				else	//rotate right
 				{
-					if (inspTemp.unary.reg1 == 0)
+					if (instrTemp.unary.reg1 == 0)
 						reg.rA16 = (reg.rA16 >> 1) + (reg.rA16<<15);
 					else
 						reg.rX16 = (reg.rX16 >> 1) + (reg.rX16<<15);
 				}
 				break;
-			case 3 : 
+			case 3 :	
 				break;
 			case 4 : //FIGURE OUT IF ANY HEX/DEC CONVERSIONS NEED TO BE DONE
 			case 5 :
 			//no case 6
-			case 7 : if (inspTemp.logArith.reg1 == 0)	//Add to r
+			case 7 : if (instrTemp.logArith.reg1 == 0)	//Add to r
 					reg.rA16 += reg.op16;
 				 else
 					reg.rX16 += reg.op16;
 				break;
-			case 8 : if (inspTemp.logArith.reg1 == 0)	//Subtract from r
+			case 8 : if (instrTemp.logArith.reg1 == 0)	//Subtract from r
 					reg.rA16 -= reg.op16;
 				 else
 					reg.rX16 -= reg.op16;
 				break;
-			case 9 : if (inspTemp.logArith.reg1 == 0)
-					reg.rA16 = reg.rA16 && reg.op16;
+			case 9 : if (instrTemp.logArith.reg1 == 0)	
+					reg.rA16 = reg.rA16 && reg.op16;	//Bitwise AND
 				else
-					reg.rX16 = reg.rX16 || reg.op16;
+					reg.rX16 = reg.rX16 || reg.op16;	
 				break;
 			case 10 :
 			//no case 11
-			case 12 : if (inspTemp.logArith.reg1 == 0)	//Load r from memory
+			case 12 : if (instrTemp.logArith.reg1 == 0)	//Load r from memory
 					reg.rA16 = reg.op16;
 				 else
 					reg.rX16 = reg.op16;
 				break;
-			case 13 : if (inspTemp.logArith.reg1 == 0)	//Load byte from memory
+			case 13 : if (instrTemp.logArith.reg1 == 0)	//Load byte from memory
 					reg.rA8R = reg.op8R;
 				 else
 					reg.rX8R = reg.op8R;
 				break;
-			case 14 : if (inspTemp.logArith.reg1 == 0)	//Store r to memory
+			case 14 : if (instrTemp.logArith.reg1 == 0)	//Store r to memory
 					mainMem[reg.op16] = reg.rA16;
 				 else
-					mainMem[reg.oP16] = reg.rX16;
+					mainMem[reg.op16] = reg.rX16;
 				break;
-			case 15 : if (inspTemp.logArith.reg1 == 0)	//Store byte from r to memory
-					mainMem[reg.op8] = reg.rA8R;
+			case 15 : if (instrTemp.logArith.reg1 == 0)	//Store byte to memory
+					mainMem[reg.op8R] = reg.rA8R;
 				 else
-					mainMem[reg.op8] = reg.rX8R;
+					mainMem[reg.op8R] = reg.rX8R;
 				break;
 		}
-		inspTemp = mainMem[reg.pC];
+		instrTemp.fullIS = mainMem[reg.pC];
 		reg.pC++;
 		/** Display register values to the screen or output file (call function to do this) */
 	}
-
-
-    
-    
- /** What else are we missing here? */   
- 
- 
-    
   return 0;
 }
