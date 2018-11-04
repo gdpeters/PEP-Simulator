@@ -57,9 +57,14 @@ union operandSpec {	//Operand Specifier
 	unsigned int fullOS : 16;	//**DELETE IF UNUSED?
 };
 
+//Check Pep/8 for those instructions that modify the display operand
 unsigned int updateOperand(unsigned int m [], operandSpec os, int aaa)	//Updates operand with appropriate value 
 {
-	return (aaa == 0) ? os.fullOS : m[os.fullOS];	
+	if (aaa == 0)
+		return os.fullOS;
+	else
+		return m[os.fullOS];
+	//return (aaa == 0) ? os.fullOS : m[os.fullOS];	
 }
 
 int main() {
@@ -137,7 +142,7 @@ int main() {
 						reg.rX16 = (reg.rX16 >> 1) + (reg.rX16<<15);
 				}
 				break;
-			case 3 :	cout<<reg.op16; //for now
+			case 3 :	cout<<reg.op16; //no operand display
 				break;
 			case 4 : //FIGURE OUT IF ANY HEX/DEC CONVERSIONS NEED TO BE DONE
 				break;
@@ -173,9 +178,9 @@ int main() {
 					reg.rX8R = reg.op8R;
 				break;
 			case 14 : if (instrTemp.logArith.reg1 == 0)	//Store r to memory
-					mainMem[reg.op16] = reg.rA16;
+					mainMem[operTemp.fullOS] = reg.rA16;
 				 else
-					mainMem[reg.op16] = reg.rX16;
+					mainMem[operTemp.fullOS] = reg.rX16;
 				break;
 			case 15 : if (instrTemp.logArith.reg1 == 0)	//Store byte to memory
 					mainMem[reg.op8R] = reg.rA8R;
