@@ -65,6 +65,13 @@ struct registers {
         return m[os.fullOS];
     //return (aaa == 0) ? os.fullOS : m[os.fullOS];
 }*/
+union temporaryUnit {
+	struct {
+		unsigned int byteR : 8;
+		unsigned int byteL : 8;
+	}
+	unsigned int full : 16;
+}value, addr;
 
 int main() {
     ifstream readFile;                //Create an input stream
@@ -82,11 +89,11 @@ int main() {
     
     registers reg;            //Declare a set of new registers
     reg.pC = 0;            //Initiate program counter to 0
-
-    reg.instrSpecifier.full = mainMem[reg.pC];    //Load first memory array cell into the instruction specifier
-    reg.pC++;                //Increment program counter
+	temporaryUnit temp16;
+    reg.instrSpecifier.full = mainMem[reg.pC++];    //Load first memory array cell into the instruction specifier
+                   //Increment program counter
     
-    while (reg.instrSpecifier.full != 0)        //While instruction specifier is not STOP
+    /**while (reg.instrSpecifier.full != 0)        //While instruction specifier is not STOP
     {
         if (reg.instrSpecifier.logArith.instr4 > 2) //If instruction is not unary
         {
@@ -95,7 +102,7 @@ int main() {
             reg.operSpecifier.byteR = mainMem[reg.pC];     //Load operand specifier second byte
             reg.pC++;                      //Increment program counter
             //reg.op16 = updateOperand(mainMem, operTemp, instrTemp.ioTraps.addr3);    //Assign appropriate value to operand
-        }
+        }*/
         
         switch (reg.instrSpecifier.logArith.instr4)    //Check first nibble to extract instruction code
         {
@@ -143,32 +150,50 @@ int main() {
                         
                 }
                 break;
+
             case 3 :
                 switch (reg.instrSpecifier.ioTraps.instr5)
-                {
-                    case 6 :    unsigned int deci;
-                        cin>>deci;
-                        reg.operand.full = deci;
-                        mainMem[reg.operSpecifier.full] = reg.operand.byteL;
-                        mainMem[reg.operSpecifier.full + 1] = reg.operand.byteR;
+                {	
+                    case 6 :    	//Decimal input
+                        cin>>temp16.value.full;						//assign user input to temp value
+						temp16.addr.byteL = mainMem[reg.pC++];		//assign left byte of address to temp address
+						temp16.addr.byteR = mainMem[reg.pC++];		//assign right byte of address to temp address
+						mainMem[temp16.addr.full] = temp16.value.byteL;
+						mainMem[temp16.addr.full+1] = temp16.value.byteR;
+						temp16.value.full = 0;		//reset temporary value
+						temp16.addr.full = 0;		//reset temporary address
                         break;
-                    case 7 :
+                    case 7 :		//Decimal output
                         if (reg.instrSpecifier.ioTraps.aaa == 0)
-                            cout<<reg.operSpecifier.full;
+						{
+							temp16.value.byteL = mainMem[reg.pC++];
+							temp16.value.byteR = mainMem[reg.pC++];
+							cout<<temp16.value.full;
+							temp16.value.full = 0;
+						}
                         else
-                            reg.operand.byteL = mainMem[reg.operSpecifier.full];
-                            reg.operand.byteR = mainMem[reg.operSpecifier.full + 1];
-                            cout<<reg.operand.full;
+						{
+							temp16.addr.byteL = mainMem[reg.pC++];
+							temp16.addr.byteR = mainMem[reg.pC++];
+							
+							temp16.value.byteL = mainMem[temp16.addr.full];
+							temp16.value.byteR = mainMem[temp16.addr.full+1];
+							
+							cout<<temp16.value.full;
+							temp16.value.full = 0;
+							temp16.addr.full = 0;
                         break;
                     default : cout<<"Error: Case 3";
                 }
                 break;
                 
-            case 4 : unsigned int cTemp;
-                cin>>cTemp;
-                reg.operand.full = cTemp;
-                mainMem[reg.operSpecifier.full] = reg.operand.byteL;
-                mainMem[reg.operSpecifier.full + 1] = reg.operand.byteR;
+            case 4 : 
+					cin<<reg.operand.full;
+					reg.operSpecifier.byteL = mainMem[reg.pC++];
+					reg.operSpecifier.byteR = mainMem[reg.pC++];
+					
+					mainMem[reg.operSpecifier.full] = reg.operand.byteL;
+					mainMem[reg.operSpecifier.full+1] = reg.operand.byteR;
                 break;
                 
                 
