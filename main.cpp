@@ -4,19 +4,19 @@
 using namespace std;
 
 struct registers {
-	union {
+	union {  //Accumulator
 		struct {
 			unsigned int lsd8 : 8;    
 			unsigned int msd8 : 8;
 		};
-		unsigned int full : 16;    //Accumulator
-	} rA;
-	union {
+		unsigned int full : 16;  
+	} rA; 
+	union { //Index
 		struct {
-			unsigned int lsd8 : 8;    //Index divided
+			unsigned int lsd8 : 8;    
 			unsigned int msd8 : 8;
 		};
-		unsigned int full : 16;    //Index
+		unsigned int full : 16;
 	} rX;
 	
 	unsigned int sP : 16;    //Stack Pointer
@@ -34,25 +34,25 @@ struct registers {
 		struct {
 			unsigned int aaa3 : 3;
 			unsigned int r1 : 1;
-			unsigned int instr4 : 4;    //Also used in switch statement to identify instruction number
+			unsigned int instr4 : 4;    
 		} arith;    //For Arithmetic instructions (0000 raaa)
-		unsigned int full : 8;    //If fullIS == 00 then stop reading instructions
+		unsigned int full : 8;    
 	} iSpec;
 
 	union {    //Operand Specifier
 		struct {
 			unsigned int lsd8 : 8;
 			unsigned int msd8 : 8;
-		};    //Used when loading bytes from memory
-		unsigned int full : 16;    //**DELETE IF UNUSED?
+		};    
+		unsigned int full : 16; 
 	} oSpec;
 
-	union {
+	union {   //Operand
 		struct {
-			unsigned int lsd8 : 8;    //Operand divided
+			unsigned int lsd8 : 8;    
 			unsigned int msd8 : 8;
 		};
-		unsigned int full : 16;    //Operand
+		unsigned int full : 16;   
 	} operand;
 };
 
@@ -73,11 +73,12 @@ void printRegisters(registers rgstr)
 	cout<<"Program Counter: "<< setw(6) << rgstr.pC;
 	cout<<"\nAccumulator: "<< setw(6) << rgstr.rA.full;
 	cout<<"\nIndex: "<< setw(6)<< rgstr.rX.full;
-	cout<<"\nStack Pointer: " << setw(6)<< rgstr.sP;		//How are we updating SP. I don't see a change in PEP/8.
+	cout<<"\nStack Pointer: " << setw(6)<< rgstr.sP;		
 	cout<<"\nInstruction Specifier: "<<setw(4)<< rgstr.iSpec.full;
 	cout<<"\nOperand Specifier: "<< setw(6)<< rgstr.oSpec.full;
 	cout<<"\nOperand: "<< setw(6)<<rgstr.operand.full<<" ]\n\n"; 
 }
+
 int main() {
 	ifstream readFile;               
 	readFile.open("text.txt", ios::in);       
@@ -85,13 +86,13 @@ int main() {
 	unsigned int tempHex;                
 	int count = 0;                    
 
-	while (readFile >> hex >> tempHex)         //Load 1-byte from input file to variable
+	while (readFile >> hex >> tempHex)         
 	{
-		mainMem[count++] = tempHex;        
+		mainMem[count++] = tempHex;  //Load 1-byte from input file into main memory     
 	}
 
 	registers reg;         //Declare a set of new registers
-	reg.pC = 0;            //Initiate program counter to 0
+	reg.pC = 0;           
 	reg.iSpec.full = mainMem[reg.pC++];    //Load first memory array cell into the instruction specifier
 													
 	while (reg.iSpec.full != 0)        
