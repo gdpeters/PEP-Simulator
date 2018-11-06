@@ -5,103 +5,96 @@ using namespace std;
 struct registers {
 	union {
 		struct {
-			unsigned int rA8R : 8;    //Accumulator divided
-			unsigned int rA8L : 8;
+			unsigned int lsd8 : 8;    
+			unsigned int msd8 : 8;
 		};
-		unsigned int rA16 : 16;    //Accumulator
-	};
+		unsigned int full : 16;    //Accumulator
+	} rA;
 	union {
 		struct {
-			unsigned int rX8R : 8;    //Index divided
-			unsigned int rX8L : 8;
+			unsigned int lsd8 : 8;    //Index divided
+			unsigned int msd8 : 8;
 		};
-		unsigned int rX16 : 16;    //Index
-	};
-
-	unsigned int pC : 16;    //Program counter
+		unsigned int full : 16;    //Index
+	} rX;
+	
 	unsigned int sP : 16;    //Stack Pointer
+	unsigned int pC : 16;    //Program counter
 
 	union {    //Instruction specifier
 		struct {
-			unsigned int r : 1;
+			unsigned int r1 : 1;
 			unsigned int instr7 : 7;
 		} unary;    //For unary instructions (0000 000r)
 		struct {
-			unsigned int aaa : 3;
+			unsigned int aaa3 : 3;
 			unsigned int instr5 : 5;
-		} ioTraps;    //For I/O instructions (0000 0aaa)
+		} ioTrap;    //For I/O instructions (0000 0aaa)
 		struct {
-			unsigned int aaa : 3;
-			unsigned int r : 1;
+			unsigned int aaa3 : 3;
+			unsigned int r1 : 1;
 			unsigned int instr4 : 4;    //Also used in switch statement to identify instruction number
-		} logArith;    //For Arithmetic instructions (0000 raaa)
-
+		} arith;    //For Arithmetic instructions (0000 raaa)
 		unsigned int full : 8;    //If fullIS == 00 then stop reading instructions
-	} instrSpecifier;
+	} iSpec;
 
 	union {    //Operand Specifier
 		struct {
-			unsigned int byteR : 8;
-			unsigned int byteL : 8;
+			unsigned int lsd8 : 8;
+			unsigned int msd8 : 8;
 		};    //Used when loading bytes from memory
-
 		unsigned int full : 16;    //**DELETE IF UNUSED?
-	} operSpecifier;
+	} oSpec;
 
 	union {
 		struct {
-			unsigned int byteR : 8;    //Operand divided
-			unsigned int byteL : 8;
+			unsigned int lsd8 : 8;    //Operand divided
+			unsigned int msd8 : 8;
 		};
 		unsigned int full : 16;    //Operand
 	} operand;
 };
-union temporaryUnit {
+
+union tempUnit {
 	struct {
-		unsigned int byteR : 8;
-		unsigned int byteL : 8;
+		unsigned int lsd8 : 8;
+		unsigned int msd8 : 8;
 	};
 	unsigned int full : 16;
-}tempValue, tempAddr;
-
-void updateOperand(unsigned int mem[], registers rgst, int aaa)    //Updates operand with appropriate value
-{
-	if (aaa == 0)					//Immediate operand = os
-		rgst.operand.full = rgst.operSpecifier.full;
-	else							//Direct operand = mem[os]
-		rgst.operand.full = mem[rgst.operSpecifier.full];
-}
-
+} tempValue, tempAddr;
 
 int main() {
-	ifstream readFile;                //Create an input stream
-	readFile.open("text.txt", ios::in);        //Open file
-	unsigned int mainMem[50];            //Create main memory array
+	ifstream readFile;               
+	readFile.open("text.txt", ios::in);       
+	unsigned int mainMem[50];            
 	unsigned int tempHex;                //For retrieving each hex value from file
-	int count = 0;                    //Array index value
+	int count = 0;                    
 
 	while (readFile >> hex >> tempHex)         //Load 1-byte from input file to variable
 	{
-		mainMem[count] = tempHex;        //Assign value to main memory
-		count++;
-
+		mainMem[count++] = tempHex;        
 	}
 
-	registers reg;            //Declare a set of new registers
+	registers reg;         //Declare a set of new registers
 	reg.pC = 0;            //Initiate program counter to 0
-	reg.instrSpecifier.full = mainMem[reg.pC++];    //Load first memory array cell into the instruction specifier
-													//Increment program counter
-
-	while (reg.instrSpecifier.full != 0)        //While instruction specifier is not STOP
+	reg.iSpec.full = mainMem[reg.pC++];    //Load first memory array cell into the instruction specifier
+													
+	while (reg.iSpec.full != 0)        //While instruction specifier is not STOP
 	{
-		if (reg.instrSpecifier.logArith.instr4 > 4) //If instruction is not unary
+		if (reg.iSpec.arith.instr4 > 3) //Update operand specifier for I/O and Arithmetic instructions
 		{
-			reg.operSpecifier.byteL = mainMem[reg.pC++];     //Load operand specifier first byte
-			reg.operSpecifier.byteR = mainMem[reg.pC++];     //Load operand specifier second byte
-			updateOperand(mainMem, reg, reg.instrSpecifier.ioTraps.aaa);    //Assign appropriate value to operand
+			reg.oSpec.msd8 = mainMem[reg.pC++];     
+			reg.oSpec.lsd8 = mainMem[reg.pC++];    
+			if ((reg.iSpec.arith.instr4 > 4) && (reg.iSpec.arith.instr4 < 14))  //Update operand for those using immediate and direct addressing modes
+			{
+				if (reg.iSpec.arith.aaa3 == 0)
+					reg.operand.full = reg.oSpec.full;
+				else
+					reg.operand.full = mainMem[reg.oSpec.full];
+			}
 		}
-
-		switch (reg.instrSpecifier.logArith.instr4)    //Check first nibble to extract instruction code
+			
+		switch (reg.iSpec.logArith.instr4)    //Check first nibble to extract instruction code
 		{
 		case 1:
 			switch (reg.instrSpecifier.unary.instr7)    //Unary no operand
@@ -113,6 +106,7 @@ int main() {
 					reg.rX16 = reg.rX16 ^ ((1 << 16) - 1); //is there a shorter way to write this?
 				break;
 			case 14:
+					
 				if (reg.instrSpecifier.unary.r == 0)
 					reg.rA16 <<= 1;    //Arithmetic shift left Accumulator
 				else
