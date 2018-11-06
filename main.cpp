@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <iomanip>
 using namespace std;
 
 struct registers {
@@ -65,14 +66,17 @@ union tempUnit {
 
 void printRegisters(registers rgstr)
 {
+	cout << showbase << uppercase << hex;
+	cout << internal << setfill('0');
+
 	cout<<"Current Registers [ \n";
-	cout<<"Program Counter: "<< rgstr.pC;
-	cout<<"\nAccumulator: "<<rgstr.rA.full;
-	cout<<"\nIndex: "<< rgstr.rX.full;
-	cout<<"\nStack Pointer: " << rgstr.sP;		//How are we updating SP. I don't see a change in PEP/8.
-	cout<<"\nInstruction Specifier: "<<rgstr.iSPec.full;
-	cout<<"\nOperand Specifier: "<<rgstr.oSpec.full;
-	cout<<"\nOperand: "<< rgstr.operand.full<<" ]\n\n"; 
+	cout<<"Program Counter: "<< setw(6) << rgstr.pC;
+	cout<<"\nAccumulator: "<< setw(6) << rgstr.rA.full;
+	cout<<"\nIndex: "<< setw(6)<< rgstr.rX.full;
+	cout<<"\nStack Pointer: " << setw(6)<< rgstr.sP;		//How are we updating SP. I don't see a change in PEP/8.
+	cout<<"\nInstruction Specifier: "<<setw(4)<< rgstr.iSpec.full;
+	cout<<"\nOperand Specifier: "<< setw(6)<< rgstr.oSpec.full;
+	cout<<"\nOperand: "<< setw(6)<<rgstr.operand.full<<" ]\n\n"; 
 }
 int main() {
 	ifstream readFile;               
@@ -105,10 +109,12 @@ int main() {
 			}
 		}
 			
-		switch (reg.iSpec.logArith.instr4)    //Check first nibble to extract instruction code
+		switch (reg.iSpec.arith.instr4)    //Check first nibble to extract instruction code
 		{
 			case 1:
-				switch (reg.iSpec.unary.instr7)    //Unary no operand
+				reg.operand.full = 0;	//Unary no operand
+				reg.oSpec.full = 0;
+				switch (reg.iSpec.unary.instr7)    
 				{
 					case 12: //Bitwise invert
 						if (reg.iSpec.unary.r1 == 0)
@@ -133,7 +139,9 @@ int main() {
 				break;
 
 			case 2: 
-				switch (reg.iSpec.unary.instr7) //Unary no operand
+				reg.operand.full = 0;	//Unary no operand
+				reg.oSpec.full = 0;
+				switch (reg.iSpec.unary.instr7) 
 				{
 					case 16: //Rotate left
 						if (reg.iSpec.unary.r1 == 0)
@@ -156,8 +164,6 @@ int main() {
 				switch (reg.iSpec.ioTrap.instr5)
 				{
 					case 6:	//Decimal input
-				//why can't 'cin' take in unsigned 16-bit int?
-				//NEED TO ADJUST FOR ASCII CHARACTER
 						int decIn;
 						cin>>decIn;
 						tempValue.full = decIn;						
@@ -165,16 +171,13 @@ int main() {
 						tempAddr.lsd8 = mainMem[reg.pC++];		
 						mainMem[tempAddr.full] = tempValue.msd8;
 						mainMem[tempAddr.full + 1] = tempValue.lsd8;
-						tempValue.full = 0;		//reset temporary value
-						tempAddr.full = 0;		//reset temporary address
 						break;
-					case 7:		//Decimal output
+					case 7:	//Decimal output
 						if (reg.iSpec.ioTrap.aaa3 == 0)
 						{
 							tempValue.msd8 = mainMem[reg.pC++];
 							tempValue.lsd8 = mainMem[reg.pC++];
-							cout << tempValue.full;
-							tempValue.full = 0;
+							cout << dec << tempValue.full << endl;		//Need to sort out hex vs dec
 						}
 						else
 						{
@@ -182,61 +185,61 @@ int main() {
 							tempAddr.lsd8 = mainMem[reg.pC++];
 							tempValue.msd8 = mainMem[tempAddr.full];
 							tempValue.lsd8 = mainMem[tempAddr.full + 1];
-							cout << tempValue.full;
-							tempValue.full = 0;
-							tempAddr.full = 0;
+							cout << dec << tempValue.full << endl;		//Need to sort out hex vs dec
 						}
 						break;
 					default: cout << "Error: Case 3";
 				}
+				tempValue.full = 0;	//reset temporary value
+				tempAddr.full = 0;	//reset temporary address
 				break;
 
-			case 4:		//Character input
+			case 4:	//Character input
 				reg.operand.full = mainMem[reg.oSpec.full]; //only 1-byte?
 				break;
 				
-			case 5:		//Character output
-				cout << reg.operand.full; //NEED TO ADJUST FOR CHARACTER OUTPUT
+			case 5:	//Character output
+				cout << reg.operand.full << endl; 		//Need to sort out hex vs ASCII
 				break;
 			//no case 6
-			case 7:		//Add to register
+			case 7:	//Add to register
 				if (reg.iSpec.arith.r1 == 0)    
 					reg.rA.full += reg.operand.full;
 				else
 					reg.rX.full += reg.operand.full;
 				break;
-			case 8:		//Subtract from register
+			case 8:	//Subtract from register
 				if (reg.iSpec.arith.r1 == 0)    
 					reg.rA.full -= reg.operand.full;
 				else
 					reg.rX.full -= reg.operand.full;
 				break;
-			case 9: 	//Bitwise AND
+			case 9: //Bitwise AND
 				if (reg.iSpec.arith.r1 == 0)
 					reg.rA.full &= reg.operand.full;    
 				else
 					reg.rX.full &= reg.operand.full;
 				break;
-			case 10:	//Bitwise OR
+			case 10: //Bitwise OR
 				if (reg.iSpec.arith.r1 == 0)
 					reg.rA.full |= reg.operand.full;    
 				else
 					reg.rX.full |= reg.operand.full;
 				break;
 			//no case 11
-			case 12:	//Load register from memory
+			case 12: //Load register from memory
 				if (reg.iSpec.arith.r1 == 0)    
 					reg.rA.full = reg.operand.full;
 				else
 					reg.rX.full = reg.operand.full;
 				break;
-			case 13: 	//Load byte from memory
+			case 13: //Load byte from memory
 				if (reg.iSpec.arith.r1 == 0)   
 					reg.rA.lsd8 = reg.operand.lsd8;
 				else
 					reg.rX.lsd8 = reg.operand.lsd8;
 				break;
-			case 14: 	//Store register to memory
+			case 14: //Store register to memory
 				if (reg.iSpec.arith.r1 == 0)   
 				{
 					reg.operand.full = reg.rA.full;
@@ -250,7 +253,7 @@ int main() {
 					mainMem[reg.oSpec.full + 1] = reg.operand.lsd8;
 				}
 				break;
-			case 15:	//Store byte register to memory
+			case 15: //Store byte register to memory
 				if (reg.iSpec.arith.r1 == 0)    
 				{
 					reg.operand.full = reg.rA.lsd8;
