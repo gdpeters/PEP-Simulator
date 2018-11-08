@@ -200,7 +200,7 @@ int main() {
 				break;
 				
 			case 5:	//Character output
-				cout << reg.operand.full << endl; 		//Need to sort out hex vs ASCII
+				cout << (char)reg.operand.full << endl; 		//Need to sort out hex vs ASCII
 				break;
 			//no case 6
 			case 7:	//Add to register
