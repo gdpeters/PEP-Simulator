@@ -4,7 +4,7 @@
 using namespace std;
 
 struct registers {
-    union {
+    union { //Accumulator & Index registers
         struct {
             unsigned int lsd8 : 8;
             unsigned int msd8 : 8;
@@ -32,30 +32,14 @@ struct registers {
         unsigned int full : 8;
     } iSpec;
     
-    union {    //Operand Specifier
+    union { //Operand Specifier, Operand, and temporary
         struct {
             unsigned int lsd8 : 8;
             unsigned int msd8 : 8;
         };
         unsigned int full : 16;
-    } oSpec;
-    
-    union {   //Operand
-        struct {
-            unsigned int lsd8 : 8;
-            unsigned int msd8 : 8;
-        };
-        unsigned int full : 16;
-    } operand;
+    } oSpec, operand, tempValue, tempAddr;
 };
-
-union tempUnit {
-    struct {
-        unsigned int lsd8 : 8;
-        unsigned int msd8 : 8;
-    };
-    unsigned int full : 16;
-} tempValue, tempAddr;
 
 void printRegisters(registers rgstr)
 {
@@ -101,8 +85,8 @@ int main() {
                     reg.operand.full = reg.oSpec.full;
                 else
                 {
-                    reg.operand.msd8 = mainMem[reg.oSpec.full];
-                    reg.operand.lsd8 = mainMem[reg.oSpec.full + 1];
+                    reg.operand.msd8 = mainMem[reg.oSpec.full]; //Assigns first byte
+                    reg.operand.lsd8 = mainMem[reg.oSpec.full + 1]; //Assigns second byte
                 }
             }
         }
@@ -116,9 +100,9 @@ int main() {
             {
                 case 12: //Bitwise invert
                     if (reg.iSpec.unary.r1 == 0)
-                        reg.rA.full = reg.rA.full ^ ((1 << 16) - 1); //is there a shorter way to write this?
+                        reg.rA.full = reg.rA.full ^ ((1 << 16) - 1);
                     else
-                        reg.rX.full = reg.rX.full ^ ((1 << 16) - 1); //is there a shorter way to write this?
+                        reg.rX.full = reg.rX.full ^ ((1 << 16) - 1);
                     break;
                 case 14: //Arithmetic shift left
                     if (reg.iSpec.unary.r1 == 0)
@@ -164,32 +148,32 @@ int main() {
                 case 6:    //Decimal input
                     int decIn;
                     cin>>decIn;
-                    tempValue.full = decIn;
-                    tempAddr.msd8 = mainMem[reg.pC++];
-                    tempAddr.lsd8 = mainMem[reg.pC++];
-                    mainMem[tempAddr.full] = tempValue.msd8;
-                    mainMem[tempAddr.full + 1] = tempValue.lsd8;
+                    reg.tempValue.full = decIn;
+                    reg.tempAddr.msd8 = mainMem[reg.pC++];
+                    reg.tempAddr.lsd8 = mainMem[reg.pC++];
+                    mainMem[reg.tempAddr.full] = reg.tempValue.msd8;
+                    mainMem[reg.tempAddr.full + 1] = reg.tempValue.lsd8;
                     break;
                 case 7:    //Decimal output
                     if (reg.iSpec.ioTrap.aaa3 == 0)
                     {
-                        tempValue.msd8 = mainMem[reg.pC++];
-                        tempValue.lsd8 = mainMem[reg.pC++];
-                        cout << dec << tempValue.full << endl;        //Need to sort out hex vs dec
+                        reg.tempValue.msd8 = mainMem[reg.pC++];
+                        reg.tempValue.lsd8 = mainMem[reg.pC++];
+                        cout << dec << reg.tempValue.full << endl;        //Need to sort out hex vs dec
                     }
                     else
                     {
-                        tempAddr.msd8 = mainMem[reg.pC++];
-                        tempAddr.lsd8 = mainMem[reg.pC++];
-                        tempValue.msd8 = mainMem[tempAddr.full];
-                        tempValue.lsd8 = mainMem[tempAddr.full + 1];
-                        cout << dec << tempValue.full << endl;        //Need to sort out hex vs dec
+                        reg.tempAddr.msd8 = mainMem[reg.pC++];
+                        reg.tempAddr.lsd8 = mainMem[reg.pC++];
+                        reg.tempValue.msd8 = mainMem[reg.tempAddr.full];
+                        reg.tempValue.lsd8 = mainMem[reg.tempAddr.full + 1];
+                        cout << dec << reg.tempValue.full << endl;        //Need to sort out hex vs dec
                     }
                     break;
                 default: cout << "Error: Case 3";
             }
-                tempValue.full = 0;    //reset temporary value
-                tempAddr.full = 0;    //reset temporary address
+                reg.tempValue.full = 0;    //reset temporary value
+                reg.tempAddr.full = 0;    //reset temporary address
                 break;
                 
             case 4:    //Character input only takes 1-byte (00)
@@ -253,7 +237,7 @@ int main() {
                     mainMem[reg.oSpec.full + 1] = reg.operand.lsd8;
                 }
                 break;
-            case 15: //Store byte register to memory
+            case 15: //Store byte from register to memory
                 if (reg.iSpec.arith.r1 == 0)
                 {
                     reg.operand.full = reg.rA.lsd8;
