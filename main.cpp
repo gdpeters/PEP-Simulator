@@ -1,258 +1,261 @@
+/** Last Update: 12/07/18 4:45pm
+ CSC 376 Computer Organization (Dr. Luke Vespa)
+ Midterm Project - PEP/8 Simulation
+ Christopher Cook & Genevieve Peters
+ 
+ This program attempts to simulate the PEP/8 Virtual Computer. It computes a set of
+ hexadecimal machine code instructions from a file. Only 18 instruction specifiers and 2 addressing
+ modes are allowed. There should be 3-bytes to an instruction (1-byte instruction specifier,
+ 2-byte operand) except for Unary instructions which have only 1-byte.
+ 
+ The interface features a main memory block, registers, and I/O windows. Registers are updated after each
+ instruction. The offers a debugging mode to pause computation.
+ 
+ For clarification:
+ Accumulator = 0
+ Index = 1
+ Immediate Addressing = 000
+ Direct Addressing = 001
+ */
+
 #include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <string>
+#include <sstream>
+#include <locale>
 using namespace std;
 
-struct registers {
-    union { //Accumulator & Index registers
+unsigned int MEMORY_SIZE = 10000;   //Size can be changed as desired
+
+struct registerAI {     //Accumulator and Index registers
+    union {
         struct {
             unsigned int lsd8 : 8;
             unsigned int msd8 : 8;
         };
         unsigned int full : 16;
-    } rA, rX;
+    };
+};
 
-    unsigned int sP = 0xFBCF;    //Stack Pointer
-    unsigned int pC : 16;    //Program counter
+struct registers {      //Processing unit
     
-    union {    //Instruction specifier
+    unsigned int sP = MEMORY_SIZE - 1072;    //Stack Pointer positioning
+    unsigned int pC : 16;    //Program counter
+    registerAI pickRegister[2];    //Accesses Accumulator/Index registers
+    
+    //Instruction Specifier divided into various bit structures
+    union {
         struct {
             unsigned int r1 : 1;
             unsigned int instr7 : 7;
-        } unary;    //For unary instructions (0000 000r)
+        } unary;    //Unary instructions (0000 000r)
+        
         struct {
             unsigned int aaa3 : 3;
             unsigned int instr5 : 5;
-        } ioTrap;    //For I/O instructions (0000 0aaa)
+        } ioTrap;    //I/O instructions (0000 0aaa)
+        
         struct {
             unsigned int aaa3 : 3;
             unsigned int r1 : 1;
             unsigned int instr4 : 4;
-        } arith;    //For Arithmetic instructions (0000 raaa)
-        unsigned int full : 8;
+        } arith;    //Arithmetic instructions (0000 raaa)
+        
+        unsigned int full : 8;  //Full instruction specifier byte
     } iSpec;
     
-    union { //Operand Specifier, Operand, and temporary
+    //Operand Specifier, Operand, and temporary values (for Deci/Deco)
+    union {
         struct {
             unsigned int lsd8 : 8;
             unsigned int msd8 : 8;
         };
         unsigned int full : 16;
-    } oSpec, operand, tempValue, tempAddr;
+    } oSpec, operand, tempValue, tempAddress;
 };
 
-void printRegisters(registers rgstr)
-{
-    cout << showbase << uppercase << hex;
-    cout << internal << setfill('0');
-    
-    cout<<"Current Registers [\n";
-    cout<<"Accumulator: "<< setw(6) << rgstr.rA.full;
-    cout<<"\nIndex: "<< setw(6)<< rgstr.rX.full;
-    cout<<"\nStack Pointer: " << setw(6)<< rgstr.sP;
-    cout<<"\nProgram Counter: "<< setw(6) << rgstr.pC;
-    cout<<"\nInstruction Specifier: "<<setw(4)<< rgstr.iSpec.full;
-    cout<<"\nOperand Specifier: "<< setw(6)<< rgstr.oSpec.full;
-    cout<<"\nOperand: "<< setw(6)<<rgstr.operand.full<<" ]\n\n";
-}
+string printRegisters(registers rgstr)      //Prints register values when called after each computation
+ {
+     stringstream stream;
+     stream << showbase << uppercase << hex << internal << setfill('0');
+     stream << "Accumulator: " << setw(6) << rgstr.pickRegister[0].full
+            << "\nIndex: " << setw(6) << rgstr.pickRegister[1].full
+            << "\nStack Pointer: " << setw(6) << rgstr.sP
+            << "\nProgram Counter: " << setw(6) << rgstr.pC
+            << "\nInstruction Specifier: " << setw(4) << rgstr.iSpec.full
+            << "\nOperand Specifier: " << setw(6) << rgstr.oSpec.full
+            << "\nOperand: " << setw(6) << rgstr.operand.full << "\n\n";
+
+     return stream.str();
+ }
 
 int main() {
+    
     ifstream readFile;
-    readFile.open("hello.txt", ios::in);
+    readFile.open("hello.txt", ios::in);        //Input file with hexadecimal machine code
+    
+    ofstream outputFile;
+    outputFile.open ("output.txt");             //Output file with register values after each computation
 
-    unsigned int mainMem[50];
+    unsigned int mainMem[MEMORY_SIZE];
     unsigned int tempHex;
-    int count = 0;
+    int byteIndex = 0;
     
     while (readFile >> hex >> tempHex)
     {
-        mainMem[count++] = tempHex;  //Load 1-byte from input file into main memory
+        mainMem[byteIndex++] = tempHex;  //Load 1 byte from input file into main memory
     }
     
-    registers reg;         //Declare a set of new registers
-    reg.pC = 0;
-    reg.iSpec.full = mainMem[reg.pC++];    //Load first memory array cell into the instruction specifier
-
-    while (reg.iSpec.full != 0)
+    registers cpu;          //Declare a set of new registers
+    cpu.pC = 0;             //Initiate program counter to 0
+    cpu.iSpec.full = mainMem[cpu.pC++];    //Load first instruction from memory array
+    
+    while (cpu.iSpec.full != 0)     //While the instruction is not 00 = Stop
     {
-        if (reg.iSpec.arith.instr4 > 3) //Update operand specifier for I/O and Arithmetic instructions
+        cpu.oSpec.msd8 = (cpu.iSpec.arith.instr4 > 3) * mainMem[cpu.pC++];  //Update operand specifier if not Unary
+        cpu.oSpec.lsd8 = (cpu.iSpec.arith.instr4 > 3) * mainMem[cpu.pC++];
+
+        if ((cpu.iSpec.arith.instr4 > 5) && (cpu.iSpec.arith.instr4 < 14))  //Update operand if instruction code is not unary, I/O, or storing registers
         {
-            reg.oSpec.msd8 = mainMem[reg.pC++];
-            reg.oSpec.lsd8 = mainMem[reg.pC++];
-            if ((reg.iSpec.arith.instr4 > 5) && (reg.iSpec.arith.instr4 < 14))  //Update operand for those using immediate and direct addressing modes
-            {
-                if (reg.iSpec.arith.aaa3 == 0)
-                    reg.operand.full = reg.oSpec.full;
-                else
-                {
-                    reg.operand.msd8 = mainMem[reg.oSpec.full]; //Assigns first byte
-                    reg.operand.lsd8 = mainMem[reg.oSpec.full + 1]; //Assigns second byte
-                }
-            }
+            cpu.operand.msd8 = (cpu.iSpec.arith.aaa3 == 0) * (cpu.oSpec.msd8 - mainMem[cpu.oSpec.full]) + mainMem[cpu.oSpec.full];
+            cpu.operand.lsd8 = (cpu.iSpec.arith.aaa3 == 0) * (cpu.oSpec.lsd8 - mainMem[cpu.oSpec.full + 1]) + mainMem[cpu.oSpec.full + 1];
         }
         
-        switch (reg.iSpec.arith.instr4)    //Check first nibble to extract instruction code
+        switch (cpu.iSpec.arith.instr4)    //Check first nibble to extract instruction code
         {
-            case 1:
-                reg.operand.full = 0;    //Unary no operand
-                reg.oSpec.full = 0;
-                switch (reg.iSpec.unary.instr7)
+            case 1:     //Shifts and Invert
             {
-                case 12: //Bitwise invert
-                    if (reg.iSpec.unary.r1 == 0)
-                        reg.rA.full = reg.rA.full ^ ((1 << 16) - 1);
-                    else
-                        reg.rX.full = reg.rX.full ^ ((1 << 16) - 1);
-                    break;
-                case 14: //Arithmetic shift left
-                    if (reg.iSpec.unary.r1 == 0)
-                        reg.rA.full <<= 1;
-                    else
-                        reg.rX.full <<= 1;
-                    break;
-                case 15: //Arithmetic shift right
-                    if (reg.iSpec.unary.r1 == 0)
-                        reg.rA.full >>= 1;
-                    else
-                        reg.rX.full >>= 1;
-                    break;
-                default: cout << "Error: Case 1";
-            }
+                cpu.operand.full = 0;    //Unary no operand
+                switch (cpu.iSpec.unary.instr7)
+                {
+                    case 12: //Bitwise invert
+                        cpu.pickRegister[cpu.iSpec.unary.r1].full = cpu.pickRegister[cpu.iSpec.unary.r1].full ^ ((1 << 16) - 1);
+                        break;
+                    case 14: //Arithmetic shift left
+                        cpu.pickRegister[cpu.iSpec.unary.r1].full <<= 1;
+                        break;
+                    case 15: //Arithmetic shift right
+                        cpu.pickRegister[cpu.iSpec.unary.r1].full >>= 1;
+                        break;
+                }
                 break;
-                
-            case 2:
-                reg.operand.full = 0;    //Unary no operand
-                reg.oSpec.full = 0;
-                switch (reg.iSpec.unary.instr7)
+            }
+            case 2:     //Rotate
             {
-                case 16: //Rotate left
-                    if (reg.iSpec.unary.r1 == 0)
-                        reg.rA.full = (reg.rA.full << 1) + (reg.rA.full >> 15);
-                    else
-                        reg.rX.full = (reg.rX.full << 1) + (reg.rX.full >> 15);
-                    break;
-                case 17: //Rotate right
-                    if (reg.iSpec.unary.r1 == 0)
-                        reg.rA.full = (reg.rA.full >> 1) + (reg.rA.full << 15);
-                    else
-                        reg.rX.full = (reg.rX.full >> 1) + (reg.rX.full << 15);
-                    break;
-                default: cout << "Error: Case 2";
-                    
-            }
+                cpu.operand.full = 0;    //Unary no operand
+                switch (cpu.iSpec.unary.instr7)
+                {
+                    case 16: //Rotate left
+                        cpu.pickRegister[cpu.iSpec.unary.r1].full = (cpu.pickRegister[cpu.iSpec.unary.r1].full << 1) + (cpu.pickRegister[cpu.iSpec.unary.r1].full >> 15);
+                        break;
+                    case 17: //Rotate right
+                        cpu.pickRegister[cpu.iSpec.unary.r1].full = (cpu.pickRegister[cpu.iSpec.unary.r1].full >> 1) + (cpu.pickRegister[cpu.iSpec.unary.r1].full << 15);
+                        break;
+                }
                 break;
-                
-            case 3:
-                switch (reg.iSpec.ioTrap.instr5)
+            }
+            case 3:     //Decimal I/O
             {
-                case 6:    //Decimal input
-                    int decIn;
-                    cin>>decIn;
-                    reg.tempValue.full = decIn;
-                    reg.tempAddr.msd8 = mainMem[reg.pC++];
-                    reg.tempAddr.lsd8 = mainMem[reg.pC++];
-                    mainMem[reg.tempAddr.full] = reg.tempValue.msd8;
-                    mainMem[reg.tempAddr.full + 1] = reg.tempValue.lsd8;
-                    break;
-                case 7:    //Decimal output
-                    if (reg.iSpec.ioTrap.aaa3 == 0)
-                    {
-                        reg.tempValue.msd8 = mainMem[reg.pC++];
-                        reg.tempValue.lsd8 = mainMem[reg.pC++];
-                        cout << dec << reg.tempValue.full << endl;        //Need to sort out hex vs dec
-                    }
-                    else
-                    {
-                        reg.tempAddr.msd8 = mainMem[reg.pC++];
-                        reg.tempAddr.lsd8 = mainMem[reg.pC++];
-                        reg.tempValue.msd8 = mainMem[reg.tempAddr.full];
-                        reg.tempValue.lsd8 = mainMem[reg.tempAddr.full + 1];
-                        cout << dec << reg.tempValue.full << endl;        //Need to sort out hex vs dec
-                    }
-                    break;
-                default: cout << "Error: Case 3";
+                
+                switch (cpu.iSpec.ioTrap.instr5)
+                {
+                    case 6:    //Decimal input
+                        int decI;
+                        cin >> decI;                                        /**Update this if you need to*/
+                        cpu.tempValue.full = decI;
+                        cpu.tempAddress.msd8 = mainMem[cpu.pC++];
+                        cpu.tempAddress.lsd8 = mainMem[cpu.pC++];
+                        mainMem[cpu.tempAddress.full] = cpu.tempValue.msd8;
+                        mainMem[cpu.tempAddress.full + 1] = cpu.tempValue.lsd8;
+                        break;
+                    case 7:    //Decimal output
+                        unsigned int decO;
+                        cpu.tempAddress.msd8 = (cpu.iSpec.ioTrap.aaa3 == 1) * mainMem[cpu.pC++];
+                        cpu.tempAddress.lsd8 = (cpu.iSpec.ioTrap.aaa3 == 1) * mainMem[cpu.pC++];
+                        cpu.tempValue.msd8 = (cpu.iSpec.ioTrap.aaa3 == 0) * (mainMem[cpu.pC++] - mainMem[cpu.tempAddress.full]) + mainMem[cpu.tempAddress.full];
+                        cpu.tempValue.lsd8 = (cpu.iSpec.ioTrap.aaa3 == 0) * (mainMem[cpu.pC++] - mainMem[cpu.tempAddress.full + 1]) + mainMem[cpu.tempAddress.full + 1];
+                        decO = cpu.tempValue.full;                          /**You can use "decO" to display*/
+                        break;
+                }
+                break;
             }
-                reg.tempValue.full = 0;    //reset temporary value
-                reg.tempAddr.full = 0;    //reset temporary address
+            case 4:    //Character input only takes 1-byte (0x00)
+            {
+                string charI;
+                cin>>charI;
+                mainMem[cpu.oSpec.full] = stoi(charI);
+                cpu.operand.full = mainMem[cpu.oSpec.full];
                 break;
-                
-            case 4:    //Character input only takes 1-byte (00)
-                //cin? NEED TO FINISH
-                //update operand: reg.operand.full = mainMem[reg.oSpec.full];
-                break;
-                
+            }
             case 5:    //Character output only takes 1-byte (00)
-                reg.operand.full = mainMem[reg.oSpec.full];
-                cout << (char)reg.operand.full << endl;         //Need to sort out hex vs ASCII
+            {
+                cpu.operand.full = mainMem[cpu.oSpec.full];
+                char charO = (char) cpu.operand.full;                       /**You can use "output" to display*/
+                cout<<charO;
                 break;
-                //no case 6
+            }
+                
+            //Case 6 not included in instruction set
+                
             case 7:    //Add to register
-                if (reg.iSpec.arith.r1 == 0)
-                    reg.rA.full += reg.operand.full;
-                else
-                    reg.rX.full += reg.operand.full;
+            {
+                cpu.pickRegister[cpu.iSpec.arith.r1].full += cpu.operand.full;
                 break;
+            }
             case 8:    //Subtract from register
-                if (reg.iSpec.arith.r1 == 0)
-                    reg.rA.full -= reg.operand.full;
-                else
-                    reg.rX.full -= reg.operand.full;
+            {
+                cpu.pickRegister[cpu.iSpec.arith.r1].full -= cpu.operand.full;
                 break;
+            }
             case 9: //Bitwise AND
-                if (reg.iSpec.arith.r1 == 0)
-                    reg.rA.full &= reg.operand.full;
-                else
-                    reg.rX.full &= reg.operand.full;
+            {
+                cpu.pickRegister[cpu.iSpec.arith.r1].full &= cpu.operand.full;
                 break;
+            }
             case 10: //Bitwise OR
-                if (reg.iSpec.arith.r1 == 0)
-                    reg.rA.full |= reg.operand.full;
-                else
-                    reg.rX.full |= reg.operand.full;
+            {
+                cpu.pickRegister[cpu.iSpec.arith.r1].full |= cpu.operand.full;
                 break;
-                //no case 11
+            }
+            
+            //Case 11 not included in instruction set
+                
             case 12: //Load register from memory
-                if (reg.iSpec.arith.r1 == 0)
-                    reg.rA.full = reg.operand.full;
-                else
-                    reg.rX.full = reg.operand.full;
+            {
+                cpu.pickRegister[cpu.iSpec.arith.r1].full = cpu.operand.full;
                 break;
+            }
             case 13: //Load byte from memory
-                if (reg.iSpec.arith.r1 == 0)
-                    reg.rA.lsd8 = reg.operand.lsd8;
-                else
-                    reg.rX.lsd8 = reg.operand.lsd8;
+            {
+                cpu.pickRegister[cpu.iSpec.arith.r1].lsd8 = cpu.operand.lsd8;
                 break;
+            }
             case 14: //Store register to memory
-                if (reg.iSpec.arith.r1 == 0)
-                {
-                    reg.operand.full = reg.rA.full;
-                    mainMem[reg.oSpec.full] = reg.operand.msd8;
-                    mainMem[reg.oSpec.full + 1] = reg.operand.lsd8;
-                }
-                else
-                {
-                    reg.operand.full = reg.rX.full;
-                    mainMem[reg.oSpec.full] = reg.operand.msd8;
-                    mainMem[reg.oSpec.full + 1] = reg.operand.lsd8;
-                }
+            {
+                cpu.operand.full = cpu.pickRegister[cpu.iSpec.arith.r1].full;
+                mainMem[cpu.oSpec.full] = cpu.operand.msd8;
+                mainMem[cpu.oSpec.full + 1] = cpu.operand.lsd8;
                 break;
+            }
             case 15: //Store byte from register to memory
-                if (reg.iSpec.arith.r1 == 0)
-                {
-                    reg.operand.full = reg.rA.lsd8;
-                    mainMem[reg.oSpec.full] = reg.operand.lsd8;
-                }
-                else
-                {
-                    reg.operand.full = reg.rX.lsd8;
-                    mainMem[reg.oSpec.full] = reg.rX.lsd8;
-                }
+            {
+                cpu.operand.full = cpu.pickRegister[cpu.iSpec.arith.r1].lsd8;
+                mainMem[cpu.oSpec.full] = cpu.operand.lsd8;
                 break;
+            }
         }
-        
-        printRegisters(reg);
-        reg.iSpec.full = mainMem[reg.pC++];
+        cpu.tempValue.full = 0;     //Reset temporary value
+        cpu.tempAddress.full = 0;   //Reset temporary address
+        outputFile<<printRegisters(cpu);    //Print registers to output file
+
+        cpu.iSpec.full = mainMem[cpu.pC++]; //Load next instruction into the Instruction Specifier
     }
+    outputFile.close(); //Close output file
+    
+    //Used to pause exit
+    int s;
+    cin>>s;
+    
     return 0;
 }
