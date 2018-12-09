@@ -1,16 +1,2 @@
-Description of input.txt file. Two characters
-are summed using the Accumulator and their sum is
-displayed to the screen.
-
-If we allow character inputs during execution,
-we will need to include cin>> in our function.
-
-49 00 18 //Character input placed at address 0018
-49 00 1A //Character input placed at address 001A
-C1 00 17 //Load value from address 0017 to Accumulator
-71 00 19 //Add value from address 0019 to Accumulator
-80 00 30 //Subtract 30 for ASCII adjustment
-F1 00 16 //Accumulator loaded to address 0016
-51 00 16 //Output value at address 0016
-00 //Stop
-zz //End program
+The input.txt file should print "hello" to the console.
+It should also print the registers to output.txt.
