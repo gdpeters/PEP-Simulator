@@ -93,7 +93,7 @@ string printRegisters(registers rgstr)      //Prints register values when called
 int main() {
     
     ifstream readFile;
-    readFile.open("hello.txt", ios::in);        //Input file with hexadecimal machine code
+    readFile.open("input.txt", ios::in);        //Input file with hexadecimal machine code
     
     ofstream outputFile;
     outputFile.open ("output.txt");             //Output file with register values after each computation
