@@ -1,5 +1,4 @@
-/** Last Update: 12/07/18 4:45pm
- CSC 376 Computer Organization (Dr. Luke Vespa)
+/** CSC 376 Computer Organization (Dr. Luke Vespa)
  Midterm Project - PEP/8 Simulation
  Christopher Cook & Genevieve Peters
  
@@ -93,7 +92,7 @@ string printRegisters(registers rgstr)      //Prints register values when called
 int main() {
     
     ifstream readFile;
-    readFile.open("input.txt", ios::in);        //Input file with hexadecimal machine code
+    readFile.open("hello.txt", ios::in);        //Input file with hexadecimal machine code
     
     ofstream outputFile;
     outputFile.open ("output.txt");             //Output file with register values after each computation
