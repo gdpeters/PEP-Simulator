@@ -7,9 +7,6 @@
  modes are allowed. There should be 3-bytes to an instruction (1-byte instruction specifier,
  2-byte operand) except for Unary instructions which have only 1-byte.
  
- The interface features a main memory block, registers, and I/O windows. Registers are updated after each
- instruction. The offers a debugging mode to pause computation.
- 
  For clarification:
  Accumulator = 0
  Index = 1
@@ -26,6 +23,7 @@
 using namespace std;
 
 unsigned int MEMORY_SIZE = 10000;   //Size can be changed as desired
+unsigned int sP = MEMORY_SIZE - 1072;    //Stack Pointer positioning
 
 struct registerAI {     //Accumulator and Index registers
     union {
@@ -38,8 +36,7 @@ struct registerAI {     //Accumulator and Index registers
 };
 
 struct registers {      //Processing unit
-    
-    unsigned int sP = MEMORY_SIZE - 1072;    //Stack Pointer positioning
+
     unsigned int pC : 16;    //Program counter
     registerAI pickRegister[2];    //Accesses Accumulator/Index registers
     
@@ -80,7 +77,7 @@ string printRegisters(registers rgstr)      //Prints register values when called
      stream << showbase << uppercase << hex << internal << setfill('0');
      stream << "Accumulator: " << setw(6) << rgstr.pickRegister[0].full
             << "\nIndex: " << setw(6) << rgstr.pickRegister[1].full
-            << "\nStack Pointer: " << setw(6) << rgstr.sP
+            << "\nStack Pointer: " << setw(6) << sP
             << "\nProgram Counter: " << setw(6) << rgstr.pC
             << "\nInstruction Specifier: " << setw(4) << rgstr.iSpec.full
             << "\nOperand Specifier: " << setw(6) << rgstr.oSpec.full
@@ -92,7 +89,7 @@ string printRegisters(registers rgstr)      //Prints register values when called
 int main() {
     
     ifstream readFile;
-    readFile.open("hello.txt", ios::in);        //Input file with hexadecimal machine code
+    readFile.open("input.txt", ios::in);        //Input file with hexadecimal machine code
     
     ofstream outputFile;
     outputFile.open ("output.txt");             //Output file with register values after each computation
@@ -112,8 +109,15 @@ int main() {
     
     while (cpu.iSpec.full != 0)     //While the instruction is not 00 = Stop
     {
-        cpu.oSpec.msd8 = (cpu.iSpec.arith.instr4 > 3) * mainMem[cpu.pC++];  //Update operand specifier if not Unary
-        cpu.oSpec.lsd8 = (cpu.iSpec.arith.instr4 > 3) * mainMem[cpu.pC++];
+        if (cpu.iSpec.arith.instr4 > 3)
+        {
+            cpu.oSpec.msd8 = mainMem[cpu.pC++];  //Update operand specifier if not Unary
+            cpu.oSpec.lsd8 = mainMem[cpu.pC++];
+        }
+        if (cpu.iSpec.arith.instr4 == 5)
+        {
+            cpu.operand.full = (cpu.iSpec.arith.aaa3 == 0) * (cpu.oSpec.full - mainMem[cpu.oSpec.full]) + mainMem[cpu.oSpec.full];
+        }
 
         if ((cpu.iSpec.arith.instr4 > 5) && (cpu.iSpec.arith.instr4 < 14))  //Update operand if instruction code is not unary, I/O, or storing registers
         {
@@ -161,7 +165,7 @@ int main() {
                 {
                     case 6:    //Decimal input
                         int decI;
-                        cin >> decI;                                        /**Update this if you need to*/
+                        cin >> decI;
                         cpu.tempValue.full = decI;
                         cpu.tempAddress.msd8 = mainMem[cpu.pC++];
                         cpu.tempAddress.lsd8 = mainMem[cpu.pC++];
@@ -170,11 +174,21 @@ int main() {
                         break;
                     case 7:    //Decimal output
                         unsigned int decO;
-                        cpu.tempAddress.msd8 = (cpu.iSpec.ioTrap.aaa3 == 1) * mainMem[cpu.pC++];
-                        cpu.tempAddress.lsd8 = (cpu.iSpec.ioTrap.aaa3 == 1) * mainMem[cpu.pC++];
-                        cpu.tempValue.msd8 = (cpu.iSpec.ioTrap.aaa3 == 0) * (mainMem[cpu.pC++] - mainMem[cpu.tempAddress.full]) + mainMem[cpu.tempAddress.full];
-                        cpu.tempValue.lsd8 = (cpu.iSpec.ioTrap.aaa3 == 0) * (mainMem[cpu.pC++] - mainMem[cpu.tempAddress.full + 1]) + mainMem[cpu.tempAddress.full + 1];
-                        decO = cpu.tempValue.full;                          /**You can use "decO" to display*/
+                        if (cpu.iSpec.ioTrap.aaa3 == 1)
+                        {
+                            cpu.tempAddress.msd8 = mainMem[cpu.pC++];
+                            cpu.tempAddress.lsd8 = mainMem[cpu.pC++];
+                            cpu.tempValue.msd8 = mainMem[cpu.tempAddress.full];
+                            cpu.tempValue.lsd8 = mainMem[cpu.tempAddress.full + 1];
+                        }
+                        else
+                        {
+                            cpu.tempValue.msd8 = mainMem[cpu.pC++];
+                            cpu.tempValue.lsd8 = mainMem[cpu.pC++];
+                        }
+
+                        decO = cpu.tempValue.full;
+                        cout<<endl<<decO;
                         break;
                 }
                 break;
@@ -189,8 +203,7 @@ int main() {
             }
             case 5:    //Character output only takes 1-byte (00)
             {
-                cpu.operand.full = mainMem[cpu.oSpec.full];
-                char charO = (char) cpu.operand.full;                       /**You can use "output" to display*/
+                char charO = (char) cpu.operand.full;
                 cout<<charO;
                 break;
             }
@@ -252,7 +265,7 @@ int main() {
     }
     outputFile.close(); //Close output file
     
-    //Used to pause exit
+    //Used to pause termination
     int s;
     cin>>s;
     
