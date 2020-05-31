@@ -1,0 +1,140 @@
+Reading file...c0 0 48 e1 0 30 c8 0 65 e9 0 32 78 0 7 51 0 31 51 0 33 f9 0 35 51 0 35 51 0 35 c1 0 32 70 0 a e1 0 40 51 0 41 0 
+
+---Instruction: Load register from memory---
+Accumulator: 0X0048
+Index: 000000
+Stack Pointer: 0X22E0
+Program Counter: 0X0003
+Instruction Specifier: 0XC0
+Operand Specifier: 0X0048
+Operand: 0X0048
+
+---Instruction: Store register to memory---
+Accumulator: 0X0048
+Index: 000000
+Stack Pointer: 0X22E0
+Program Counter: 0X0006
+Instruction Specifier: 0XE1
+Operand Specifier: 0X0030
+Operand: 0X0048
+
+---Instruction: Load register from memory---
+Accumulator: 0X0048
+Index: 0X0065
+Stack Pointer: 0X22E0
+Program Counter: 0X0009
+Instruction Specifier: 0XC8
+Operand Specifier: 0X0065
+Operand: 0X0065
+
+---Instruction: Store register to memory---
+Accumulator: 0X0048
+Index: 0X0065
+Stack Pointer: 0X22E0
+Program Counter: 0X000C
+Instruction Specifier: 0XE9
+Operand Specifier: 0X0032
+Operand: 0X0065
+
+---Instruction: Add to register---
+Accumulator: 0X0048
+Index: 0X006C
+Stack Pointer: 0X22E0
+Program Counter: 0X000F
+Instruction Specifier: 0X78
+Operand Specifier: 0X0007
+Operand: 0X0007
+
+---Instruction: Character output---
+Character output: H
+
+Accumulator: 0X0048
+Index: 0X006C
+Stack Pointer: 0X22E0
+Program Counter: 0X0012
+Instruction Specifier: 0X51
+Operand Specifier: 0X0031
+Operand: 0X0048
+
+---Instruction: Character output---
+Character output: e
+
+Accumulator: 0X0048
+Index: 0X006C
+Stack Pointer: 0X22E0
+Program Counter: 0X0015
+Instruction Specifier: 0X51
+Operand Specifier: 0X0033
+Operand: 0X0065
+
+---Instruction: Store byte from register to memory---
+Accumulator: 0X0048
+Index: 0X006C
+Stack Pointer: 0X22E0
+Program Counter: 0X0018
+Instruction Specifier: 0XF9
+Operand Specifier: 0X0035
+Operand: 0X006C
+
+---Instruction: Character output---
+Character output: l
+
+Accumulator: 0X0048
+Index: 0X006C
+Stack Pointer: 0X22E0
+Program Counter: 0X001B
+Instruction Specifier: 0X51
+Operand Specifier: 0X0035
+Operand: 0X006C
+
+---Instruction: Character output---
+Character output: l
+
+Accumulator: 0X0048
+Index: 0X006C
+Stack Pointer: 0X22E0
+Program Counter: 0X001E
+Instruction Specifier: 0X51
+Operand Specifier: 0X0035
+Operand: 0X006C
+
+---Instruction: Load register from memory---
+Accumulator: 0X0065
+Index: 0X006C
+Stack Pointer: 0X22E0
+Program Counter: 0X0021
+Instruction Specifier: 0XC1
+Operand Specifier: 0X0032
+Operand: 0X0065
+
+---Instruction: Add to register---
+Accumulator: 0X006F
+Index: 0X006C
+Stack Pointer: 0X22E0
+Program Counter: 0X0024
+Instruction Specifier: 0X70
+Operand Specifier: 0X000A
+Operand: 0X000A
+
+---Instruction: Store register to memory---
+Accumulator: 0X006F
+Index: 0X006C
+Stack Pointer: 0X22E0
+Program Counter: 0X0027
+Instruction Specifier: 0XE1
+Operand Specifier: 0X0040
+Operand: 0X006F
+
+---Instruction: Character output---
+Character output: o
+
+Accumulator: 0X006F
+Index: 0X006C
+Stack Pointer: 0X22E0
+Program Counter: 0X002A
+Instruction Specifier: 0X51
+Operand Specifier: 0X0041
+Operand: 0X006F
+
+Program Output: Hello
+

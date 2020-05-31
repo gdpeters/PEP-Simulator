@@ -1,0 +1,60 @@
+Instruction set for Pep8 Simulator
+Genevieve Peters
+
+Acc: Accumulator
+Ind: Index Register
+Mode: U (unary), d (direct), i (immediate)
+OperSpec (Operand Specificer): os (Operand Specificer)
+Operand: os (Operand Specificer), m[os] (memory[Operand Specificer]), r (Register)
+
+HEX         Instruction     Mode        OperSpec    Operand
+00	        Stop		    U	        null		null
+
+Acc Ind
+18, 19	    Bitwise invert	U	        null		null
+
+1C, 1D	    ASL		        U	        null		null
+
+1E, 1F	    ASR		        U	        null		null
+
+20, 21	    RoL		        U	        null		null
+
+22, 23	    RoR		        U	        null		null
+
+31	        Deci		    d	        null		null
+
+38, 39	    Deco		    i,d	        null		null
+
+49	        Chari		    d	        os		    0xinput
+
+50	        Charo		    i	        os		    os
+
+51	        Charo		    d	        os		    m[os]
+
+70, 78	    Add to r	    i	        os		    os
+
+71, 79	    Add to r	    d	        os		    m[os]
+
+80, 88 	    Subtract r	    i	        os		    os
+
+81, 89	    Subtract r	    d	        os		    m[os]
+
+90, 98	    Bitwise AND	    i	        os		    os
+
+91, 99	    Bitwise AND	    d	        os		    m[os]
+
+A0, A8	    Bitwise OR	    i	        os		    os
+
+A1, A9	    Bitwise OR	    d	        os		    m[os]
+
+C0, C8	    Load r		    i	        os		    os
+
+C1, C9	    Load r		    d	        os		    m[os]
+
+D0, D8	    Load byte	    i	        os		    os (but only load 8R to r)
+
+D1, D9	    Load byte	    d	        os		    m[os]
+
+E1, E9	    Store r		    d	        os		    r
+
+F1, F9	    Store byte	    d	        os		    r.8R
