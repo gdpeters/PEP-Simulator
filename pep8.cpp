@@ -14,7 +14,7 @@
  * 
  * To run:
  *      $ g++ pep8.cpp
- *      $ ./a.out
+ *      $ ./a.out <hexFile.txt>
  * 
  * Output file and console prints register values after each instruction.
  * 
